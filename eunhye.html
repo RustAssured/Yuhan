@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>은혜</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400&display=swap');
+
+  :root {
+    --night: #0D1216;
+    --dawn-deep: #1A222B;
+    --ivory: #F4F1EC;
+    --celadon: #A8BDB2;
+    --gold: #D4B896;
+    --gold-bright: #E8D3AE;
+    --rose-dawn: #C9A18E;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html, body {
+    height:100%;
+    overflow:hidden;
+    background:var(--night);
+    font-family:'Jost',sans-serif;
+    color:var(--ivory);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #stage { position:fixed; inset:0; overflow:hidden; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+
+  .layer {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:48px 32px;
+    z-index:10;
+    transition:opacity 1.6s ease;
+  }
+  .layer.hidden { opacity:0; pointer-events:none; }
+
+  /* ===== GIVE MODE ===== */
+  .give-symbol {
+    font-family:'Cormorant Garamond',serif;
+    font-size:56px; font-weight:300;
+    color:var(--gold);
+    margin-bottom:20px;
+    opacity:0; animation:rise 2s ease 0.3s forwards;
+  }
+  .give-word {
+    font-size:11px; letter-spacing:0.28em; text-transform:uppercase;
+    color:var(--celadon); margin-bottom:36px;
+    opacity:0; animation:rise 2s ease 0.7s forwards;
+  }
+  .give-explain {
+    font-family:'Cormorant Garamond',serif;
+    font-size:19px; font-weight:300; font-style:italic;
+    line-height:1.6; color:var(--ivory); opacity:0.85;
+    max-width:320px; margin-bottom:40px;
+    opacity:0; animation:rise 2s ease 1.1s forwards;
+  }
+  .give-input {
+    width:100%; max-width:340px;
+    border:none; border-bottom:1px solid rgba(212,184,150,0.35);
+    background:transparent; color:var(--ivory);
+    font-family:'Cormorant Garamond',serif;
+    font-size:21px; font-weight:300;
+    text-align:center; padding:10px 4px 14px;
+    outline:none; resize:none;
+    line-height:1.5;
+    transition:border-color 0.4s;
+    -webkit-appearance:none; border-radius:0;
+    opacity:0; animation:rise 2s ease 1.4s forwards;
+    overflow:hidden;
+  }
+  .give-input:focus { border-color:var(--gold); }
+  .give-input::placeholder { color:rgba(168,189,178,0.35); font-style:italic; }
+
+  .give-for {
+    margin-top:22px;
+    width:100%; max-width:220px;
+    border:none; border-bottom:1px solid rgba(168,189,178,0.25);
+    background:transparent; color:var(--celadon);
+    font-family:'Jost',sans-serif; font-size:14px; font-weight:300;
+    text-align:center; padding:8px 4px;
+    outline:none; -webkit-appearance:none; border-radius:0;
+    opacity:0; animation:rise 2s ease 1.6s forwards;
+    letter-spacing:0.04em;
+  }
+  .give-for::placeholder { color:rgba(168,189,178,0.3); }
+
+  .give-btn {
+    margin-top:44px;
+    padding:15px 44px;
+    border:1px solid rgba(212,184,150,0.45);
+    background:transparent; color:var(--gold);
+    font-family:'Jost',sans-serif; font-size:11px; font-weight:400;
+    letter-spacing:0.18em; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s;
+    -webkit-appearance:none;
+    opacity:0; animation:rise 2s ease 1.9s forwards;
+  }
+  .give-btn:active { background:rgba(212,184,150,0.12); }
+  .give-btn:disabled { opacity:0.25; pointer-events:none; }
+
+  .give-note {
+    margin-top:26px;
+    font-family:'Jost',sans-serif; font-size:10px;
+    letter-spacing:0.1em; color:var(--celadon); opacity:0;
+    animation:rise 2s ease 2.2s forwards;
+    max-width:280px; line-height:1.7;
+  }
+  .give-note span { opacity:0.45; }
+
+  @keyframes rise { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+
+  /* ===== LINK READY ===== */
+  .ready-text {
+    font-family:'Cormorant Garamond',serif;
+    font-size:24px; font-weight:300; font-style:italic;
+    line-height:1.5; color:var(--ivory);
+    max-width:320px; margin-bottom:36px;
+  }
+  .ready-link {
+    width:100%; max-width:340px;
+    padding:14px 16px;
+    background:rgba(244,241,236,0.05);
+    border:1px solid rgba(168,189,178,0.2);
+    color:var(--celadon);
+    font-family:'Jost',sans-serif; font-size:11px;
+    word-break:break-all; line-height:1.6;
+    margin-bottom:24px;
+    border-radius:2px;
+  }
+  .copy-btn {
+    padding:15px 44px;
+    border:1px solid rgba(212,184,150,0.45);
+    background:transparent; color:var(--gold);
+    font-family:'Jost',sans-serif; font-size:11px;
+    letter-spacing:0.18em; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s; -webkit-appearance:none;
+  }
+  .copy-btn:active { background:rgba(212,184,150,0.12); }
+  .ready-sub {
+    margin-top:28px;
+    font-family:'Cormorant Garamond',serif;
+    font-size:15px; font-style:italic;
+    color:var(--celadon); opacity:0.6;
+    max-width:280px; line-height:1.6;
+  }
+
+  /* ===== RECEIVE MODE ===== */
+  #receive-layer { cursor:pointer; }
+
+  .receive-beat {
+    position:absolute;
+    max-width:340px;
+    opacity:0;
+    transition:opacity 2.4s ease, transform 2.4s ease;
+    transform:translateY(8px);
+    pointer-events:none;
+  }
+  .receive-beat.visible { opacity:1; transform:translateY(0); }
+
+  .receive-beat .line {
+    font-family:'Cormorant Garamond',serif;
+    font-size:25px; font-weight:300;
+    line-height:1.5; margin-bottom:2px;
+  }
+  .receive-beat .line.em { font-style:italic; color:var(--gold-bright); }
+  .receive-beat .line.small {
+    font-family:'Jost',sans-serif;
+    font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--celadon); opacity:0.6; margin-top:20px;
+  }
+
+  .gift-message {
+    font-family:'Cormorant Garamond',serif;
+    font-size:29px !important;
+    font-weight:400;
+    font-style:italic;
+    line-height:1.45 !important;
+    color:var(--gold-bright);
+    text-shadow:0 0 30px rgba(232,211,174,0.25);
+  }
+
+  #receive-hint {
+    position:absolute; bottom:36px; left:0; right:0;
+    text-align:center;
+    font-family:'Jost',sans-serif; font-size:10px;
+    letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--ivory); opacity:0;
+    transition:opacity 1.5s ease;
+    z-index:11; pointer-events:none;
+  }
+  #receive-hint.visible { opacity:0.2; }
+
+  @media (max-height:680px) {
+    .give-explain { font-size:17px; margin-bottom:28px; }
+    .receive-beat .line { font-size:22px; }
+    .gift-message { font-size:25px !important; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="canvas"></canvas>
+
+  <!-- GIVE MODE -->
+  <div class="layer" id="give-layer">
+    <div class="give-symbol">은혜</div>
+    <div class="give-word">grace</div>
+    <div class="give-explain">
+      Dit kun je niet voor jezelf openen.<br>
+      Je kunt het alleen geven.
+    </div>
+    <textarea class="give-input" id="give-text" rows="2" maxlength="140"
+      placeholder="Schrijf één zin voor iemand..."></textarea>
+    <input class="give-for" id="give-name" maxlength="30" placeholder="voor wie? (optioneel)">
+    <button class="give-btn" id="give-btn" onclick="makeGift()">Geef het door</button>
+    <div class="give-note">
+      Er wordt een link gemaakt die je kunt delen.<br>
+      <span>Niets wordt opgeslagen. De woorden reizen alleen in de link zelf.</span>
+    </div>
+  </div>
+
+  <!-- LINK READY -->
+  <div class="layer hidden" id="ready-layer">
+    <div class="ready-text" id="ready-text">Het licht is klaar om te reizen.</div>
+    <div class="ready-link" id="ready-link"></div>
+    <button class="copy-btn" id="copy-btn" onclick="copyLink()">Kopieer de link</button>
+    <div class="ready-sub">
+      Stuur het wanneer het goed voelt.<br>
+      Of helemaal niet. Ook dat is oké.
+    </div>
+  </div>
+
+  <!-- RECEIVE MODE -->
+  <div class="layer hidden" id="receive-layer">
+    <div class="receive-beat" id="receive-beat"></div>
+  </div>
+  <div id="receive-hint">tik om verder te gaan</div>
+</div>
+
+<script>
+// ============================================
+// 은혜 (Eunhye) — Grace
+// What arrives unasked. What can only be given.
+// Message travels in the URL hash. No backend.
+// ============================================
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, DPR;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W*DPR; canvas.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener('resize', resize); resize();
+
+// ===== STATE =====
+const S = {
+  mode:'give',        // give | ready | receive
+  t:0,
+  dawn:0,             // 0..1 how far the light has arrived (receive mode)
+  dawnTarget:0,
+};
+
+// light motes — slow drifting particles like dust in dawn light
+const motes = [];
+for (let i = 0; i < 70; i++) {
+  motes.push({
+    x: Math.random(),
+    y: Math.random(),
+    r: Math.random()*1.6+0.4,
+    vy: -(Math.random()*0.008+0.003),   // drift upward, slowly
+    vx: (Math.random()-0.5)*0.004,
+    tw: Math.random()*6.28,
+    sp: Math.random()*0.6+0.2,
+  });
+}
+
+let lastFrame = performance.now();
+function loop(now) {
+  const dt = Math.min((now-lastFrame)/1000, 0.05);
+  lastFrame = now;
+  S.t += dt;
+
+  // dawn eases toward target very slowly — grace arrives, it is not rushed
+  S.dawn += (S.dawnTarget - S.dawn) * Math.min(1, dt*0.10);
+
+  // motes drift
+  for (const m of motes) {
+    m.y += m.vy*dt*60/60;
+    m.x += m.vx*dt*60/60;
+    if (m.y < -0.05) { m.y = 1.05; m.x = Math.random(); }
+    if (m.x < -0.05) m.x = 1.05;
+    if (m.x > 1.05) m.x = -0.05;
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function lerp(a,b,t){return a+(b-a)*t;}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  const d = S.dawn; // 0 night .. 1 full dawn
+
+  // background: night → dawn gradient rising from below
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  // top stays darker longer; bottom warms first — light arrives from the horizon
+  const topR = Math.round(lerp(13, 26, d*0.5));
+  const topG = Math.round(lerp(18, 30, d*0.5));
+  const topB = Math.round(lerp(22, 38, d*0.5));
+  const botR = Math.round(lerp(16, 64, d));
+  const botG = Math.round(lerp(22, 54, d));
+  const botB = Math.round(lerp(27, 46, d));
+  bg.addColorStop(0, `rgb(${topR},${topG},${topB})`);
+  bg.addColorStop(0.65, `rgb(${Math.round(lerp(14,40,d))},${Math.round(lerp(20,38,d))},${Math.round(lerp(25,38,d))})`);
+  bg.addColorStop(1, `rgb(${botR},${botG},${botB})`);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,W,H);
+
+  // dawn glow from below — the arriving light
+  if (d > 0.01) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glowH = H * lerp(0.15, 0.75, d);
+    const glow = ctx.createLinearGradient(0, H, 0, H - glowH);
+    glow.addColorStop(0, `rgba(212,184,150,${0.16*d})`);
+    glow.addColorStop(0.5, `rgba(201,161,142,${0.07*d})`);
+    glow.addColorStop(1, 'rgba(212,184,150,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, H-glowH, W, glowH);
+
+    // a soft sun-presence below the horizon line — never fully risen
+    const sunY = H * lerp(1.15, 0.92, d);
+    const sun = ctx.createRadialGradient(W/2, sunY, 0, W/2, sunY, W*0.55);
+    sun.addColorStop(0, `rgba(232,211,174,${0.22*d})`);
+    sun.addColorStop(0.4, `rgba(212,184,150,${0.08*d})`);
+    sun.addColorStop(1, 'rgba(212,184,150,0)');
+    ctx.fillStyle = sun;
+    ctx.beginPath();
+    ctx.arc(W/2, sunY, W*0.55, 0, 6.2832);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // motes — visible in give mode faintly, glowing in receive mode as dawn rises
+  for (const m of motes) {
+    const mx = m.x*W, my = m.y*H;
+    const tw = 0.4 + 0.6*(Math.sin(S.t*m.sp + m.tw)*0.5+0.5);
+    // motes catch the light: brighter lower in the frame and as dawn rises
+    const heightFactor = 1 - m.y*0.5;
+    const a = tw * lerp(0.10, 0.45, d) * heightFactor;
+    ctx.beginPath();
+    ctx.arc(mx, my, m.r, 0, 6.2832);
+    ctx.fillStyle = `rgba(${Math.round(lerp(168,232,d))},${Math.round(lerp(189,211,d))},${Math.round(lerp(178,174,d))},${a})`;
+    ctx.fill();
+  }
+}
+
+// ===== GIVE MODE =====
+const giveText = document.getElementById('give-text');
+giveText.addEventListener('input', () => {
+  giveText.style.height = 'auto';
+  giveText.style.height = giveText.scrollHeight + 'px';
+});
+
+function makeGift() {
+  const text = giveText.value.trim();
+  if (!text) {
+    giveText.style.borderColor = 'var(--gold)';
+    giveText.focus();
+    return;
+  }
+  const name = document.getElementById('give-name').value.trim();
+  const payload = { m: text, n: name || null };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url = location.origin + location.pathname + '#g=' + encoded;
+
+  document.getElementById('ready-link').textContent = url;
+  document.getElementById('ready-text').textContent = name
+    ? `Het licht voor ${name} is klaar om te reizen.`
+    : 'Het licht is klaar om te reizen.';
+
+  showLayer('ready');
+  S.dawnTarget = 0.25; // a hint of dawn for the giver — but they never see the full arrival
+}
+
+function copyLink() {
+  const url = document.getElementById('ready-link').textContent;
+  const btn = document.getElementById('copy-btn');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      btn.textContent = 'Gekopieerd';
+      setTimeout(() => btn.textContent = 'Kopieer de link', 2500);
+    }).catch(() => fallbackCopy(url, btn));
+  } else {
+    fallbackCopy(url, btn);
+  }
+}
+
+function fallbackCopy(url, btn) {
+  const ta = document.createElement('textarea');
+  ta.value = url;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); btn.textContent = 'Gekopieerd'; }
+  catch(e) { btn.textContent = 'Kopieer handmatig'; }
+  document.body.removeChild(ta);
+  setTimeout(() => btn.textContent = 'Kopieer de link', 2500);
+}
+
+// ===== RECEIVE MODE =====
+let gift = null;
+let beats = [];
+let bi = -1;
+let advancing = false;
+let autoTimer = null;
+
+function parseGift() {
+  const hash = location.hash;
+  if (!hash.startsWith('#g=')) return null;
+  try {
+    const json = decodeURIComponent(escape(atob(hash.slice(3))));
+    const data = JSON.parse(json);
+    if (data && typeof data.m === 'string' && data.m.length > 0 && data.m.length <= 200) {
+      return data;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function startReceive() {
+  S.mode = 'receive';
+  showLayer('receive');
+
+  const forLine = gift.n ? [`Voor ${gift.n}.`, 'small'] : null;
+
+  beats = [
+    { lines: [['Iemand dacht aan je.','']], hold: 5000, dawn: 0.12 },
+    ...(forLine ? [{ lines:[forLine], hold: 4200, dawn: 0.2 }] : []),
+    { lines: [['Dit is niet verdiend.',''],['Het hoeft niet terugbetaald.','em']], hold: 5400, dawn: 0.3 },
+    { lines: [['Het is alleen maar gegeven.','']], hold: 4800, dawn: 0.42 },
+    { lines: [['Zoals licht arriveert —','em'],['ongevraagd.','em']], hold: 5200, dawn: 0.58 },
+    { lines: [[gift.m, 'gift']], hold: 12000, dawn: 0.95 },
+    { lines: [['Je hoeft er niets mee.',''],['Het is al van jou.','em']], hold: 6000, dawn: 1 },
+    { lines: [['은혜','em']], hold: 99999, dawn: 1, final: true },
+  ];
+
+  setTimeout(() => {
+    nextBeat();
+    document.getElementById('receive-layer').addEventListener('click', () => {
+      if (!advancing) nextBeat();
+    });
+  }, 1800);
+}
+
+function nextBeat() {
+  bi++;
+  if (bi >= beats.length) return;
+  const b = beats[bi];
+  advancing = true;
+  S.dawnTarget = b.dawn;
+
+  const el = document.getElementById('receive-beat');
+  el.classList.remove('visible');
+
+  setTimeout(() => {
+    let html = '';
+    for (const [t, c] of b.lines) {
+      if (t === '') continue;
+      if (c === 'gift') {
+        html += `<p class="line gift-message">"${escapeHtml(t)}"</p>`;
+      } else {
+        html += `<p class="line ${c}">${escapeHtml(t)}</p>`;
+      }
+    }
+    el.innerHTML = html;
+    el.classList.add('visible');
+
+    if (!b.final) {
+      setTimeout(() => document.getElementById('receive-hint').classList.add('visible'), 2600);
+    } else {
+      document.getElementById('receive-hint').classList.remove('visible');
+    }
+
+    advancing = false;
+    clearTimeout(autoTimer);
+    if (!b.final) {
+      autoTimer = setTimeout(() => {
+        if (bi < beats.length - 1) nextBeat();
+      }, b.hold);
+    }
+  }, 1100);
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function showLayer(id) {
+  document.querySelectorAll('.layer').forEach(l => l.classList.add('hidden'));
+  document.getElementById(id + '-layer').classList.remove('hidden');
+}
+
+// ===== BOOT =====
+gift = parseGift();
+if (gift) {
+  startReceive();
+} else {
+  S.mode = 'give';
+  showLayer('give');
+}
+</script>
+</body>
+</html>

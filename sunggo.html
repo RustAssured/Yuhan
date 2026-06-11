@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>숭고</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&family=Jost:wght@300;400&display=swap');
+
+  :root {
+    --void: #0B1418;
+    --ivory: #F4F1EC;
+    --celadon: #A8BDB2;
+    --aurora: #7BA68E;
+    --gold: #D4B896;
+    --warm: #C8A87C;
+    --cold: #6E93A0;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+
+  html, body {
+    height:100%;
+    overflow:hidden;
+    background:var(--void);
+    font-family:'Jost',sans-serif;
+    color:var(--ivory);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #stage { position:fixed; inset:0; overflow:hidden; cursor:pointer; }
+
+  canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+
+  /* ===== CENTER COUNTER (the finitude, burning through) ===== */
+  #counter {
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    z-index:4;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity 1.2s ease;
+  }
+  #counter.shown { opacity:1; }
+
+  #counter .num {
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.04em;
+    line-height:1;
+  }
+  #counter .unit {
+    font-family:'Jost',sans-serif;
+    font-size:9px;
+    letter-spacing:0.24em;
+    text-transform:uppercase;
+    margin-top:8px;
+  }
+
+  /* ===== TEXT BEATS ===== */
+  #text-layer {
+    position:absolute;
+    left:0; right:0;
+    top:24%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:0 36px;
+    pointer-events:none;
+    z-index:6;
+  }
+
+  .beat {
+    position:absolute;
+    max-width:360px;
+    opacity:0;
+    transition:opacity 1.8s ease, transform 1.8s ease;
+    transform:translateY(8px);
+  }
+  .beat.visible { opacity:1; transform:translateY(0); }
+
+  .beat .line {
+    font-family:'Cormorant Garamond',serif;
+    font-size:26px;
+    font-weight:300;
+    line-height:1.4;
+    margin:0 0 2px;
+    transition:color 1.4s ease;
+  }
+  .beat .line.em { font-style:italic; }
+
+  /* ===== INTRO ===== */
+  #intro {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:48px 36px; z-index:20;
+    transition:opacity 1.8s ease;
+    background:radial-gradient(ellipse at center, #11201F 0%, #0B1418 70%);
+  }
+  #intro.gone { opacity:0; pointer-events:none; }
+
+  .intro-symbol {
+    font-family:'Cormorant Garamond',serif;
+    font-size:68px; font-weight:300;
+    background:linear-gradient(100deg, var(--cold) 0%, var(--ivory) 45%, var(--gold) 100%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;
+    margin-bottom:24px;
+    opacity:0; animation:rise 2.2s ease 0.3s forwards;
+  }
+  .intro-word {
+    font-family:'Jost',sans-serif; font-size:11px;
+    letter-spacing:0.3em; text-transform:uppercase;
+    color:var(--celadon); opacity:0;
+    animation:rise 2.2s ease 0.9s forwards; margin-bottom:8px;
+  }
+  .intro-pair {
+    font-family:'Cormorant Garamond',serif; font-style:italic;
+    font-size:15px; color:var(--celadon); opacity:0;
+    animation:rise 2.2s ease 1.2s forwards; margin-bottom:40px;
+  }
+  .intro-pair b { color:var(--cold); font-weight:400; font-style:normal; }
+  .intro-pair i { color:var(--gold); font-weight:400; }
+
+  .birth-row {
+    display:flex; gap:10px; justify-content:center; margin-bottom:18px;
+    opacity:0; animation:rise 2.2s ease 1.5s forwards;
+  }
+  .birth-field {
+    width:64px; padding:10px 0;
+    border:none; border-bottom:1px solid rgba(168,189,178,0.4);
+    background:transparent; color:var(--ivory);
+    font-family:'Cormorant Garamond',serif; font-size:22px;
+    text-align:center; outline:none; -webkit-appearance:none; border-radius:0;
+    transition:border-color 0.3s;
+  }
+  .birth-field:focus { border-color:var(--gold); }
+  .birth-field::placeholder { color:rgba(168,189,178,0.3); }
+
+  .intro-enter {
+    font-family:'Cormorant Garamond',serif; font-style:italic; font-size:18px;
+    color:var(--ivory); opacity:0;
+    animation:rise 2.2s ease 1.8s forwards;
+    border-bottom:1px solid rgba(168,189,178,0.3); padding-bottom:4px; cursor:pointer;
+  }
+  .intro-skip {
+    font-family:'Jost',sans-serif; font-size:10px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--celadon); opacity:0;
+    animation:rise 2.2s ease 2.1s forwards; margin-top:22px; cursor:pointer;
+    text-decoration:underline; text-underline-offset:3px;
+  }
+  .intro-skip:active { color:var(--ivory); }
+
+  @keyframes rise { from { opacity:0; transform:translateY(14px);} to {opacity:1; transform:translateY(0);} }
+
+  /* ===== HINTS ===== */
+  #balance-hint, #tap-hint {
+    position:absolute; left:0; right:0; text-align:center;
+    font-family:'Jost',sans-serif; letter-spacing:0.16em; text-transform:uppercase;
+    z-index:6; pointer-events:none; transition:opacity 1.5s ease;
+  }
+  #balance-hint { bottom:60px; font-size:11px; color:var(--celadon); opacity:0; }
+  #balance-hint.visible { opacity:0.6; }
+  #tap-hint { bottom:32px; font-size:10px; color:var(--ivory); opacity:0; }
+  #tap-hint.visible { opacity:0.2; }
+
+  @media (max-height:680px) {
+    .beat .line { font-size:22px; }
+    .intro-symbol { font-size:56px; }
+    #text-layer { top:20%; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="canvas"></canvas>
+
+  <div id="counter">
+    <div class="num" id="counter-num">—</div>
+    <div class="unit" id="counter-unit"></div>
+  </div>
+
+  <div id="text-layer">
+    <div class="beat" id="beat"></div>
+  </div>
+
+  <div id="balance-hint"></div>
+  <div id="tap-hint">tik om te verschuiven</div>
+
+  <div id="intro">
+    <div class="intro-symbol">숭고</div>
+    <div class="intro-word">het sublieme</div>
+    <div class="intro-pair"><b>사이</b> &nbsp;·&nbsp; <i>지금</i></div>
+    <div class="birth-row">
+      <input class="birth-field" id="b-day" placeholder="DD" maxlength="2" inputmode="numeric">
+      <input class="birth-field" id="b-month" placeholder="MM" maxlength="2" inputmode="numeric">
+      <input class="birth-field" id="b-year" placeholder="JJJJ" maxlength="4" inputmode="numeric">
+    </div>
+    <div class="intro-enter" onclick="begin(true, event)">begin</div>
+    <div class="intro-skip" onclick="begin(false, event)">zonder datum</div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// 숭고 (Sunggo) — The Sublime
+// 사이 (the cold: finitude) + 지금 (the warm: presence)
+// fused. Drifting between poles, always pulled back
+// to the unbearable center where both arrive at once.
+// ============================================
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, DPR;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W*DPR; canvas.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener('resize', resize); resize();
+
+const S = {
+  phase:'intro',
+  t:0,
+  breath:0,
+  breathPeriod:9,
+  balance:0,        // -1 = 사이/cold/dread  ... 0 = fused ... +1 = 지금/warm/presence
+  target:0,
+  horizon:0,
+  birthMs:null,
+  remainingAtStart:0,
+  startEpoch:Date.now(),
+  free:false,
+  lastDrift:0,
+};
+
+// starfield
+const stars=[];
+for(let i=0;i<100;i++) stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.3,tw:Math.random()*6.28,sp:Math.random()*0.8+0.2,warm:Math.random()>0.5});
+
+let lastFrame=performance.now();
+function loop(now){
+  const dt=Math.min((now-lastFrame)/1000,0.05); lastFrame=now;
+  S.t+=dt;
+  S.breath=(S.breath+dt/S.breathPeriod)%1;
+
+  // ease balance toward target
+  S.balance += (S.target - S.balance) * Math.min(1, dt*0.8);
+
+  // autonomous drift (in free phase, and gently always)
+  S.lastDrift += dt;
+  if (S.free && S.lastDrift > 4.5) {
+    S.lastDrift = 0;
+    const r = Math.random();
+    // biased to return to the fused center, but sometimes lurches to a pole
+    if (r < 0.4) S.target = 0;
+    else if (r < 0.7) S.target = (Math.random()*1.1 - 0.55);
+    else S.target = (Math.random() > 0.5 ? 1 : -1) * (0.7 + Math.random()*0.3);
+  }
+
+  if (S.phase==='run' || S.phase==='free') S.horizon=Math.min(1,S.horizon+dt*0.35);
+
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2;
+  const bal=S.balance;                 // -1..1
+  const warmth=clamp((bal+1)/2,0,1);   // 0 cold .. 1 warm
+  const fused=1-Math.abs(bal);         // 1 at center, 0 at poles
+
+  // ---- background ----
+  const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.85);
+  // cold side deep teal-ink, warm side faint gold-ink
+  const r0=Math.round(lerp(13,20,warmth));
+  const g0=Math.round(lerp(28,28,warmth));
+  const b0=Math.round(lerp(34,26,warmth));
+  bg.addColorStop(0,`rgb(${r0},${g0},${b0})`);
+  bg.addColorStop(1,'#0B1418');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  // ---- horizon (past warm above / future cool below) ----
+  if(S.horizon>0.01){
+    const ha=S.horizon;
+    const pg=ctx.createLinearGradient(0,0,0,cy);
+    pg.addColorStop(0,'rgba(200,168,124,0)');
+    pg.addColorStop(1,`rgba(200,168,124,${0.10*ha*lerp(0.5,1.4,warmth)})`);
+    ctx.fillStyle=pg; ctx.fillRect(0,0,W,cy);
+    const fg=ctx.createLinearGradient(0,cy,0,H);
+    fg.addColorStop(0,`rgba(70,110,120,${0.10*ha*lerp(1.4,0.5,warmth)})`);
+    fg.addColorStop(1,'rgba(11,20,24,0)');
+    ctx.fillStyle=fg; ctx.fillRect(0,cy,W,H-cy);
+    // present line
+    const lg=ctx.createLinearGradient(0,0,W,0);
+    lg.addColorStop(0,'rgba(168,189,178,0)');
+    const lineCol = `${Math.round(lerp(110,212,warmth))},${Math.round(lerp(147,184,warmth))},${Math.round(lerp(160,150,warmth))}`;
+    lg.addColorStop(0.5,`rgba(${lineCol},${(0.4+0.3*fused)*ha})`);
+    lg.addColorStop(1,'rgba(168,189,178,0)');
+    ctx.fillStyle=lg; ctx.fillRect(0,cy-0.75,W,1.5);
+  }
+
+  // ---- stars ----
+  if(S.phase!=='intro'){
+    for(const s of stars){
+      const sx=s.x*W, sy=s.y*H;
+      const tw=0.4+0.6*(Math.sin(S.t*s.sp+s.tw)*0.5+0.5);
+      let a=tw*0.45;
+      const d=Math.abs(sy-cy);
+      if(S.horizon>0 && d<40) a*=d/40;
+      const isPast=sy<cy;
+      const col=(isPast||s.warm)?`${Math.round(lerp(150,212,warmth))},${Math.round(lerp(160,184,warmth))},${Math.round(lerp(160,150,warmth))}`:'110,147,160';
+      ctx.beginPath(); ctx.arc(sx,sy,s.r,0,6.2832);
+      ctx.fillStyle=`rgba(${col},${a})`; ctx.fill();
+    }
+  }
+
+  // ---- the orb (presence) ----
+  if(S.phase==='run'||S.phase==='free'){
+    const be=(Math.sin(S.breath*6.2832-1.5708)+1)/2; // 0..1
+    // warm side: orb breathes big & glowing. cold side: orb tightens & dims.
+    const scale=lerp(0.66,1.18,warmth)*(0.82+be*0.4);
+    const radius=46*scale;
+
+    // outer glow
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    const glowA=lerp(0.07,0.20,warmth)*(0.7+0.3*fused);
+    const gl=ctx.createRadialGradient(cx,cy,0,cx,cy,radius*3.2);
+    const gcol=`${Math.round(lerp(110,168,warmth))},${Math.round(lerp(147,189,warmth))},${Math.round(lerp(160,178,warmth))}`;
+    gl.addColorStop(0,`rgba(${gcol},${glowA})`);
+    gl.addColorStop(0.4,`rgba(${gcol},${glowA*0.5})`);
+    gl.addColorStop(1,`rgba(${gcol},0)`);
+    ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(cx,cy,radius*3.2,0,6.2832); ctx.fill();
+    ctx.restore();
+
+    // core
+    const core=ctx.createRadialGradient(cx,cy,0,cx,cy,radius);
+    const innerWarm=lerp(0.4,0.95,warmth);
+    core.addColorStop(0,`rgba(244,241,236,${innerWarm})`);
+    core.addColorStop(0.5,`rgba(${Math.round(lerp(110,212,warmth))},${Math.round(lerp(147,184,warmth))},${Math.round(lerp(160,150,warmth))},0.5)`);
+    core.addColorStop(1,'rgba(168,189,178,0.05)');
+    ctx.fillStyle=core; ctx.beginPath(); ctx.arc(cx,cy,radius,0,6.2832); ctx.fill();
+
+    // ring — sharpens on the cold side (sense of edge / dread)
+    ctx.strokeStyle=`rgba(${Math.round(lerp(110,168,warmth))},${Math.round(lerp(147,189,warmth))},${Math.round(lerp(160,178,warmth))},${lerp(0.5,0.3,warmth)+be*0.2})`;
+    ctx.lineWidth=lerp(1.4,1,warmth);
+    ctx.beginPath(); ctx.arc(cx,cy,radius+6,0,6.2832); ctx.stroke();
+  }
+
+  // counter styling driven by balance
+  updateCounterStyle(bal, fused, warmth);
+}
+
+// ===== COUNTER (finitude) =====
+const counterEl=document.getElementById('counter');
+const numEl=document.getElementById('counter-num');
+const unitEl=document.getElementById('counter-unit');
+
+function updateCounterStyle(bal, fused, warmth){
+  if(S.phase==='intro') return;
+  // cold side: large, bright, sharp. warm side: small, dim, receding.
+  const coldness=clamp((-bal+1)/2,0,1); // 1 cold ... 0 warm
+  const size=lerp(15,40,coldness);
+  const op=lerp(0.18,0.95,coldness) * (0.55+0.45*Math.max(fused, coldness));
+  numEl.style.fontSize=size+'px';
+  // color: cold blue-grey when cold, fades to faint gold when warm
+  const cr=Math.round(lerp(212,110,coldness));
+  const cg=Math.round(lerp(184,147,coldness));
+  const cb=Math.round(lerp(150,160,coldness));
+  numEl.style.color=`rgba(${cr},${cg},${cb},${op})`;
+  numEl.style.textShadow = coldness>0.5 ? `0 0 ${lerp(0,18,coldness)}px rgba(110,147,160,${0.4*coldness})` : 'none';
+  unitEl.style.color=`rgba(${cr},${cg},${cb},${op*0.7})`;
+  unitEl.style.fontSize=lerp(8,10,coldness)+'px';
+}
+
+// live counter tick
+function tickCounter(){
+  if(S.phase==='intro'){ requestAnimationFrame(tickCounter); return; }
+  if(S.birthMs!==null){
+    const lived=(Date.now()-S.birthMs)/1000;
+    const total=80*365.25*24*3600;
+    const remaining=Math.max(0,Math.floor(total-lived));
+    numEl.textContent=remaining.toLocaleString('nl-NL');
+    unitEl.textContent='seconden — naar schatting';
+  } else {
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    const ss=String(now.getSeconds()).padStart(2,'0');
+    const ms=String(now.getMilliseconds()).padStart(3,'0');
+    numEl.textContent=`${hh}:${mm}:${ss}.${ms}`;
+    unitEl.textContent='nu — en alweer voorbij';
+  }
+  requestAnimationFrame(tickCounter);
+}
+requestAnimationFrame(tickCounter);
+
+// ===== BEATS =====
+// pole: target balance during this beat (-1 cold .. +1 warm .. 0 fused)
+const beats=[
+  { pole:0,    lines:[['Twee waarheden.','']], hold:3600 },
+  { pole:-0.9, lines:[['De tijd verstrijkt.',''],['Onophoudelijk.','']], hold:4200 },
+  { pole:-1,   lines:[['Elke seconde is voorbij',''],['voordat je hem voelt.','em']], hold:4600 },
+  { pole:-1,   lines:[['Dat is het afgrijselijke.','em']], hold:4200 },
+  { pole:0,    lines:[['En toch —','']], hold:2600 },
+  { pole:0.9,  lines:[['— je bent er.',''],['Nu. Hier.','em']], hold:4200 },
+  { pole:1,    lines:[['Dit moment is volkomen.',''],['Heel.','em']], hold:4400 },
+  { pole:1,    lines:[['Dat is het mooie.','em']], hold:4200 },
+  { pole:0,    lines:[['Maar ze komen niet','' ],['om de beurt.','']], hold:4400 },
+  { pole:0,    lines:[['Ze komen tegelijk.','em']], hold:4200 },
+  { pole:0,    lines:[['Het eindigt.',''],['Daarom ís het.','em']], hold:5200 },
+  { pole:0,    lines:[['Vertel me meer','' ],['over het eindige.','em']], hold:5200 },
+  { pole:0,    lines:[['Je hoeft het niet op te lossen.','']], hold:4400 },
+  { pole:0,    lines:[['Je hoeft de balans','' ],['niet te vinden.','em']], hold:4800 },
+  { pole:0,    lines:[['Laat ze allebei binnenkomen.','']], hold:4600 },
+  { pole:0,    lines:[['Ondraaglijk en prachtig.',''],['Tegelijk.','em']], hold:5000 },
+  { pole:0,    lines:[['숭고','em']], hold:99999, final:true },
+];
+
+// free-phase surfacing lines
+const driftLines=[
+  '지금.', 'Nog steeds nu.', 'De fjorden waren een nu. Dit ook.',
+  'Het verstrijkt. Je blijft hier.', 'Beide. Altijd beide.', 'Adem.',
+  'Het eindige. Daarom.', '사이 — 지금.',
+];
+
+let bi=-1, advancing=false, autoTimer=null;
+
+document.querySelectorAll('.birth-field').forEach((f,i,arr)=>{
+  f.addEventListener('input',()=>{ if(f.value.length>=f.maxLength && arr[i+1]) arr[i+1].focus(); });
+});
+
+function begin(useDate, e){
+  if(e) e.stopPropagation();
+  if(useDate){
+    const d=parseInt(document.getElementById('b-day').value);
+    const m=parseInt(document.getElementById('b-month').value);
+    const y=parseInt(document.getElementById('b-year').value);
+    if(d&&m&&y&&y>1900&&y<2025&&m>=1&&m<=12&&d>=1&&d<=31){
+      S.birthMs=new Date(y,m-1,d).getTime();
+    }
+  }
+  document.getElementById('intro').classList.add('gone');
+  S.phase='run';
+  document.getElementById('counter').classList.add('shown');
+  setTimeout(()=>{
+    nextBeat();
+    document.getElementById('stage').addEventListener('click', onTap);
+  },1500);
+}
+
+function onTap(){
+  // user "switches" emphasis: push to the opposite pole of current balance
+  if(S.free){
+    S.target = S.balance >= 0 ? -0.9 : 0.9;
+    S.lastDrift = 0; // give it a moment before autonomous drift resumes
+  } else {
+    if(!advancing) nextBeat();
+  }
+}
+
+function nextBeat(){
+  bi++;
+  if(bi>=beats.length){ enterFree(); return; }
+  const b=beats[bi];
+  advancing=true;
+  if(typeof b.pole==='number') S.target=b.pole;
+
+  const el=document.getElementById('beat');
+  el.classList.remove('visible');
+  setTimeout(()=>{
+    let html='';
+    for(const [t,c] of b.lines){ if(t==='')continue; html+=`<p class="line ${c}">${t}</p>`; }
+    el.innerHTML=html; el.classList.add('visible');
+    // tint beat text toward the active pole
+    const warmth=clamp((S.target+1)/2,0,1);
+    el.querySelectorAll('.line').forEach(L=>{
+      if(L.classList.contains('em')){
+        const cr=Math.round(lerp(110,212,warmth)), cg=Math.round(lerp(147,184,warmth)), cb=Math.round(lerp(160,150,warmth));
+        L.style.color=`rgb(${cr},${cg},${cb})`;
+      }
+    });
+
+    if(!b.final){ setTimeout(()=>document.getElementById('tap-hint').classList.add('visible'),2200); }
+    else {
+      document.getElementById('tap-hint').classList.remove('visible');
+      document.getElementById('balance-hint').classList.remove('visible');
+      setTimeout(enterFree, 5000);
+    }
+    advancing=false;
+    clearTimeout(autoTimer);
+    if(!b.final){ autoTimer=setTimeout(()=>{ if(bi<beats.length-1) nextBeat(); }, b.hold); }
+  },900);
+}
+
+function enterFree(){
+  if(S.phase==='free') return;
+  S.phase='free'; S.free=true;
+  document.getElementById('tap-hint').classList.remove('visible');
+  const bh=document.getElementById('balance-hint');
+  bh.textContent='tik om te verschuiven · het keert altijd terug';
+  bh.classList.add('visible');
+  surface();
+}
+
+function surface(){
+  const el=document.getElementById('beat');
+  el.classList.remove('visible');
+  setTimeout(()=>{
+    const line=driftLines[Math.floor(Math.random()*driftLines.length)];
+    el.innerHTML=`<p class="line em">${line}</p>`;
+    const warmth=clamp((S.balance+1)/2,0,1);
+    const cr=Math.round(lerp(110,212,warmth)), cg=Math.round(lerp(147,184,warmth)), cb=Math.round(lerp(160,150,warmth));
+    el.querySelector('.line').style.color=`rgb(${cr},${cg},${cb})`;
+    el.classList.add('visible');
+    setTimeout(()=>el.classList.remove('visible'), 6000);
+  },1200);
+  setTimeout(surface, 9000 + Math.random()*5000);
+}
+
+// breath/balance hint text in free mode reflects the drift
+setInterval(()=>{
+  if(!S.free) return;
+  const bh=document.getElementById('balance-hint');
+  if(!bh.classList.contains('visible')) return;
+  if(S.balance < -0.5) bh.textContent='사이 — het verstrijkt';
+  else if(S.balance > 0.5) bh.textContent='지금 — je bent hier';
+  else bh.textContent='allebei — tegelijk';
+},400);
+</script>
+</body>
+</html>

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>사이</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400&display=swap');
+
+  :root {
+    --cream: #F2EDE4;
+    --ink: #1A1917;
+    --gold: #C8A96E;
+    --gold-dim: rgba(200,169,110,0.3);
+    --rose: #B8857A;
+    --muted: #9E978C;
+    --faint: rgba(26,25,23,0.06);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family:'DM Sans',sans-serif;
+    background:var(--ink);
+    color:var(--cream);
+    height:100dvh;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+  }
+
+  .app {
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* ===== SCENES ===== */
+  .scene {
+    display:none;
+    flex:1;
+    flex-direction:column;
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+  .scene.active { display:flex; }
+  .scene::-webkit-scrollbar { display:none; }
+
+  /* ===== SCENE 0: INTRO ===== */
+  #scene-intro {
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:40px 32px;
+  }
+
+  .intro-symbol {
+    font-family:'Instrument Serif',serif;
+    font-size:80px;
+    color:var(--gold);
+    margin-bottom:32px;
+    opacity:0;
+    animation: breathe 4s ease-in-out infinite, fadeUp 1.5s ease forwards;
+  }
+
+  .intro-title {
+    font-family:'Instrument Serif',serif;
+    font-size:18px;
+    font-style:italic;
+    color:var(--muted);
+    letter-spacing:0.02em;
+    margin-bottom:48px;
+    opacity:0;
+    animation: fadeUp 1.5s ease 0.5s forwards;
+  }
+
+  .intro-prompt {
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.16em;
+    color:var(--gold);
+    opacity:0;
+    animation: fadeUp 1s ease 1.2s forwards;
+    cursor:pointer;
+    padding:16px 32px;
+    border:1px solid var(--gold-dim);
+    transition:all 0.3s;
+  }
+
+  .intro-prompt:active { background:rgba(200,169,110,0.1); }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(12px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  @keyframes breathe {
+    0%,100% { transform:scale(1); }
+    50% { transform:scale(1.03); }
+  }
+
+  /* ===== SCENE 1: BIRTH ===== */
+  #scene-birth {
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:40px 32px;
+  }
+
+  .birth-question {
+    font-family:'Instrument Serif',serif;
+    font-size:36px;
+    line-height:1.15;
+    letter-spacing:-0.02em;
+    margin-bottom:8px;
+    opacity:0;
+    animation: fadeUp 0.8s ease forwards;
+  }
+
+  .birth-question .accent { font-style:italic; color:var(--gold); }
+
+  .birth-sub {
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--muted);
+    margin-bottom:40px;
+    opacity:0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  .date-input-group {
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    margin-bottom:36px;
+    opacity:0;
+    animation: fadeUp 0.8s ease 0.5s forwards;
+  }
+
+  .date-field {
+    width:72px;
+    padding:14px 0;
+    border:none;
+    border-bottom:2px solid var(--muted);
+    background:transparent;
+    color:var(--cream);
+    font-family:'Instrument Serif',serif;
+    font-size:28px;
+    text-align:center;
+    outline:none;
+    transition:border-color 0.3s;
+    -webkit-appearance:none;
+    border-radius:0;
+  }
+
+  .date-field:focus { border-color:var(--gold); }
+  .date-field::placeholder { color:rgba(158,151,140,0.4); }
+
+  .date-field-label {
+    font-family:'Space Mono',monospace;
+    font-size:8px;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    color:var(--muted);
+    text-align:center;
+    margin-top:6px;
+  }
+
+  .date-col { display:flex; flex-direction:column; }
+
+  .begin-btn {
+    padding:16px 48px;
+    border:2px solid var(--cream);
+    background:transparent;
+    color:var(--cream);
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    cursor:pointer;
+    transition:all 0.2s;
+    -webkit-appearance:none;
+    opacity:0;
+    animation: fadeUp 0.8s ease 0.7s forwards;
+  }
+
+  .begin-btn:active { background:var(--cream); color:var(--ink); }
+
+  /* ===== SCENE 2: THE GRID ===== */
+  #scene-grid {
+    padding:0;
+  }
+
+  .grid-header {
+    padding:32px 24px 20px;
+    border-bottom:1px solid rgba(242,237,228,0.08);
+    text-align:center;
+    flex-shrink:0;
+  }
+
+  .grid-header-title {
+    font-family:'Instrument Serif',serif;
+    font-size:14px;
+    font-style:italic;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+
+  .grid-header-number {
+    font-family:'Instrument Serif',serif;
+    font-size:64px;
+    line-height:1;
+    letter-spacing:-0.03em;
+    color:var(--cream);
+  }
+
+  .grid-header-label {
+    font-family:'Space Mono',monospace;
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  .grid-stats {
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    border-bottom:1px solid rgba(242,237,228,0.08);
+    flex-shrink:0;
+  }
+
+  .grid-stat {
+    padding:16px 12px;
+    text-align:center;
+    border-right:1px solid rgba(242,237,228,0.08);
+  }
+
+  .grid-stat:last-child { border-right:none; }
+
+  .grid-stat-value {
+    font-family:'Instrument Serif',serif;
+    font-size:24px;
+    color:var(--cream);
+    line-height:1;
+    margin-bottom:2px;
+  }
+
+  .grid-stat-label {
+    font-family:'Space Mono',monospace;
+    font-size:7px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--muted);
+  }
+
+  .grid-container {
+    flex:1;
+    overflow-y:auto;
+    padding:16px 12px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .grid-container::-webkit-scrollbar { display:none; }
+
+  .grid-year-label {
+    font-family:'Space Mono',monospace;
+    font-size:8px;
+    color:var(--muted);
+    letter-spacing:0.1em;
+    padding:8px 4px 4px;
+    text-transform:uppercase;
+  }
+
+  .weeks-grid {
+    display:grid;
+    grid-template-columns:repeat(52, 1fr);
+    gap:1.5px;
+    margin-bottom:2px;
+  }
+
+  .week {
+    aspect-ratio:1;
+    border-radius:0;
+    transition:background 0.3s, transform 0.2s;
+    cursor:pointer;
+    min-width:0;
+  }
+
+  .week.lived { background:var(--gold); opacity:0.7; }
+  .week.lived.current { background:var(--cream); opacity:1; box-shadow:0 0 6px rgba(242,237,228,0.4); }
+  .week.future { background:rgba(242,237,228,0.06); }
+  .week.sleep { background:var(--rose); opacity:0.4; }
+  .week.work { background:var(--muted); opacity:0.35; }
+  .week.screen { background:rgba(200,169,110,0.2); }
+
+  .week:active { transform:scale(2.5); z-index:10; }
+
+  /* Legend */
+  .grid-legend {
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    padding:16px 16px 8px;
+    border-top:1px solid rgba(242,237,228,0.08);
+    flex-shrink:0;
+  }
+
+  .legend-item {
+    display:flex; align-items:center; gap:5px;
+    font-family:'Space Mono',monospace; font-size:8px;
+    text-transform:uppercase; letter-spacing:0.08em; color:var(--muted);
+    cursor:pointer; padding:4px 0;
+    -webkit-user-select:none; user-select:none;
+  }
+
+  .legend-dot {
+    width:8px; height:8px; flex-shrink:0;
+  }
+
+  .legend-item.active .legend-label { color:var(--cream); }
+
+  /* ===== SCENE 3: ZOOM ===== */
+  #scene-zoom {
+    padding:0;
+    background:var(--ink);
+  }
+
+  .zoom-header {
+    padding:24px;
+    border-bottom:1px solid rgba(242,237,228,0.08);
+    flex-shrink:0;
+  }
+
+  .zoom-back {
+    font-family:'Space Mono',monospace;
+    font-size:9px; text-transform:uppercase; letter-spacing:0.12em;
+    color:var(--gold); cursor:pointer; margin-bottom:16px;
+    display:inline-block; padding:8px 0;
+  }
+
+  .zoom-title {
+    font-family:'Instrument Serif',serif;
+    font-size:36px; line-height:1.1; letter-spacing:-0.02em;
+  }
+
+  .zoom-title .accent { font-style:italic; color:var(--gold); }
+
+  .zoom-sub {
+    font-family:'Space Mono',monospace;
+    font-size:10px; color:var(--muted); margin-top:6px;
+    text-transform:uppercase; letter-spacing:0.08em;
+  }
+
+  .zoom-content {
+    flex:1; overflow-y:auto; padding:24px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .zoom-content::-webkit-scrollbar { display:none; }
+
+  .zoom-hours {
+    display:grid;
+    grid-template-columns:repeat(24, 1fr);
+    gap:2px;
+    margin-bottom:24px;
+  }
+
+  .zoom-hour {
+    aspect-ratio:1;
+    transition:background 0.3s;
+  }
+
+  .zoom-day-row {
+    display:flex;
+    align-items:center;
+    padding:14px 0;
+    border-bottom:1px solid rgba(242,237,228,0.06);
+    gap:16px;
+  }
+
+  .zoom-day-name {
+    font-family:'Space Mono',monospace;
+    font-size:9px; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--muted); width:36px; flex-shrink:0;
+  }
+
+  .zoom-day-bar {
+    flex:1; height:24px; display:flex; overflow:hidden;
+  }
+
+  .zoom-day-segment {
+    height:100%; transition:width 0.6s ease;
+  }
+
+  .zoom-insight {
+    margin-top:32px; padding:24px;
+    border:1px solid rgba(242,237,228,0.1);
+  }
+
+  .zoom-insight-label {
+    font-family:'Space Mono',monospace;
+    font-size:8px; text-transform:uppercase; letter-spacing:0.14em;
+    color:var(--gold); margin-bottom:10px;
+  }
+
+  .zoom-insight-text {
+    font-family:'Instrument Serif',serif;
+    font-size:22px; line-height:1.4; letter-spacing:-0.01em;
+    color:var(--cream);
+  }
+
+  /* ===== BOTTOM BAR (the pulse) ===== */
+  .pulse-bar {
+    display:none;
+    padding:12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top:1px solid rgba(242,237,228,0.08);
+    background:rgba(26,25,23,0.95);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    flex-shrink:0;
+    text-align:center;
+  }
+
+  .pulse-bar.active { display:block; }
+
+  .pulse-text {
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    transition:color 0.3s;
+  }
+
+  .pulse-counter {
+    font-family:'Instrument Serif',serif;
+    font-size:13px;
+    color:var(--gold);
+    font-style:italic;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (min-width:600px) {
+    .weeks-grid { gap:2px; }
+    .week { border-radius:0; }
+    .grid-container { padding:20px 24px; max-width:600px; margin:0 auto; }
+    .birth-question { font-size:44px; }
+    .grid-header-number { font-size:80px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SCENE 0: INTRO -->
+  <div class="scene active" id="scene-intro">
+    <div class="intro-symbol">사이</div>
+    <div class="intro-title">between then and after</div>
+    <div class="intro-prompt" onclick="goTo('birth')">Enter</div>
+  </div>
+
+  <!-- SCENE 1: BIRTH -->
+  <div class="scene" id="scene-birth">
+    <div class="birth-question">When did<br>you <span class="accent">begin?</span></div>
+    <div class="birth-sub">This is the only question.</div>
+    <div class="date-input-group">
+      <div class="date-col">
+        <input class="date-field" type="text" id="in-day" placeholder="DD" maxlength="2" inputmode="numeric">
+        <div class="date-field-label">Day</div>
+      </div>
+      <div class="date-col">
+        <input class="date-field" type="text" id="in-month" placeholder="MM" maxlength="2" inputmode="numeric">
+        <div class="date-field-label">Month</div>
+      </div>
+      <div class="date-col">
+        <input class="date-field" type="text" id="in-year" placeholder="YYYY" maxlength="4" inputmode="numeric">
+        <div class="date-field-label">Year</div>
+      </div>
+    </div>
+    <button class="begin-btn" onclick="begin()">Show me</button>
+  </div>
+
+  <!-- SCENE 2: THE GRID -->
+  <div class="scene" id="scene-grid">
+    <div class="grid-header">
+      <div class="grid-header-title">Your life in weeks</div>
+      <div class="grid-header-number" id="total-weeks">—</div>
+      <div class="grid-header-label" id="total-label">weeks total</div>
+    </div>
+    <div class="grid-stats" id="grid-stats"></div>
+    <div class="grid-legend" id="grid-legend"></div>
+    <div class="grid-container" id="grid-container"></div>
+  </div>
+
+  <!-- SCENE 3: ZOOM -->
+  <div class="scene" id="scene-zoom">
+    <div class="zoom-header">
+      <div class="zoom-back" onclick="goTo('grid')">← Back to your life</div>
+      <div class="zoom-title" id="zoom-title"></div>
+      <div class="zoom-sub" id="zoom-sub"></div>
+    </div>
+    <div class="zoom-content" id="zoom-content"></div>
+  </div>
+
+  <!-- PULSE BAR -->
+  <div class="pulse-bar" id="pulse-bar">
+    <div class="pulse-text" id="pulse-text"></div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// 사이 (Sai) — Between
+// A clock for your life.
+// ============================================
+
+let birthDate = null;
+let lifeExpectancy = 80; // years
+let currentView = 'all'; // all, sleep, work, screen, yours
+let pulseInterval = null;
+let secondsOnPage = 0;
+
+// Auto-advance date fields
+document.querySelectorAll('.date-field').forEach((field, i, fields) => {
+  field.addEventListener('input', () => {
+    if (field.value.length >= parseInt(field.maxLength)) {
+      const next = fields[i + 1];
+      if (next) next.focus();
+    }
+  });
+});
+
+function goTo(scene) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  document.getElementById('scene-' + scene).classList.add('active');
+
+  if (scene === 'grid') {
+    document.getElementById('pulse-bar').classList.add('active');
+    startPulse();
+  } else if (scene === 'zoom') {
+    document.getElementById('pulse-bar').classList.add('active');
+  } else {
+    document.getElementById('pulse-bar').classList.remove('active');
+    stopPulse();
+  }
+}
+
+function begin() {
+  const d = parseInt(document.getElementById('in-day').value);
+  const m = parseInt(document.getElementById('in-month').value);
+  const y = parseInt(document.getElementById('in-year').value);
+
+  if (!d || !m || !y || y < 1900 || y > 2025 || m < 1 || m > 12 || d < 1 || d > 31) return;
+
+  birthDate = new Date(y, m - 1, d);
+  renderGrid();
+  goTo('grid');
+}
+
+function renderGrid() {
+  const now = new Date();
+  const totalWeeks = lifeExpectancy * 52;
+  const livedMs = now - birthDate;
+  const livedWeeks = Math.floor(livedMs / (7 * 24 * 60 * 60 * 1000));
+  const remainingWeeks = Math.max(0, totalWeeks - livedWeeks);
+  const ageYears = Math.floor(livedMs / (365.25 * 24 * 60 * 60 * 1000));
+
+  // Stats
+  const sleepWeeks = Math.floor(livedWeeks * 0.33);
+  const workWeeks = Math.floor(livedWeeks * 0.22);
+  const screenWeeks = Math.floor(livedWeeks * 0.12);
+  const yoursWeeks = livedWeeks - sleepWeeks - workWeeks - screenWeeks;
+
+  document.getElementById('total-weeks').textContent = totalWeeks.toLocaleString();
+  document.getElementById('total-label').textContent = `weeks · ${remainingWeeks.toLocaleString()} remaining`;
+
+  // Stats bar
+  document.getElementById('grid-stats').innerHTML = `
+    <div class="grid-stat">
+      <div class="grid-stat-value">${livedWeeks.toLocaleString()}</div>
+      <div class="grid-stat-label">Lived</div>
+    </div>
+    <div class="grid-stat">
+      <div class="grid-stat-value">${remainingWeeks.toLocaleString()}</div>
+      <div class="grid-stat-label">Remaining</div>
+    </div>
+    <div class="grid-stat">
+      <div class="grid-stat-value">${ageYears}</div>
+      <div class="grid-stat-label">Years old</div>
+    </div>
+  `;
+
+  // Legend
+  document.getElementById('grid-legend').innerHTML = `
+    <div class="legend-item active" onclick="setView('all')">
+      <div class="legend-dot" style="background:var(--gold);opacity:0.7"></div>
+      <span class="legend-label">All</span>
+    </div>
+    <div class="legend-item" onclick="setView('sleep')">
+      <div class="legend-dot" style="background:var(--rose);opacity:0.5"></div>
+      <span class="legend-label">Sleep (${Math.round(sleepWeeks/livedWeeks*100)}%)</span>
+    </div>
+    <div class="legend-item" onclick="setView('work')">
+      <div class="legend-dot" style="background:var(--muted);opacity:0.4"></div>
+      <span class="legend-label">Work (${Math.round(workWeeks/livedWeeks*100)}%)</span>
+    </div>
+    <div class="legend-item" onclick="setView('screen')">
+      <div class="legend-dot" style="background:var(--gold);opacity:0.25"></div>
+      <span class="legend-label">Screen (${Math.round(screenWeeks/livedWeeks*100)}%)</span>
+    </div>
+    <div class="legend-item" onclick="setView('yours')">
+      <div class="legend-dot" style="background:var(--cream)"></div>
+      <span class="legend-label">Yours (${Math.round(yoursWeeks/livedWeeks*100)}%)</span>
+    </div>
+  `;
+
+  // Build grid
+  const container = document.getElementById('grid-container');
+  let html = '';
+  const birthYear = birthDate.getFullYear();
+  let weekCounter = 0;
+
+  for (let year = 0; year < lifeExpectancy; year++) {
+    if (year % 10 === 0) {
+      html += `<div class="grid-year-label">Age ${year}${year === 0 ? ' — born' : ''}</div>`;
+    }
+    html += `<div class="weeks-grid">`;
+    for (let w = 0; w < 52; w++) {
+      weekCounter++;
+      const isLived = weekCounter <= livedWeeks;
+      const isCurrent = weekCounter === livedWeeks;
+      const isFuture = weekCounter > livedWeeks;
+
+      let cls = 'week';
+      if (isCurrent) cls += ' lived current';
+      else if (isLived) {
+        if (currentView === 'all') cls += ' lived';
+        else if (currentView === 'sleep' && Math.random() < 0.33) cls += ' sleep';
+        else if (currentView === 'work' && Math.random() < 0.22) cls += ' work';
+        else if (currentView === 'screen' && Math.random() < 0.12) cls += ' screen';
+        else if (currentView === 'yours') {
+          if (Math.random() < 0.33) cls += ' lived'; // only ~33% is "yours"
+          else cls += ' future'; // rest dimmed
+        }
+        else cls += ' lived';
+      }
+      else cls += ' future';
+
+      html += `<div class="${cls}" data-week="${weekCounter}" onclick="zoomWeek(${weekCounter})"></div>`;
+    }
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+
+  // Scroll to current week area
+  setTimeout(() => {
+    const currentEl = container.querySelector('.current');
+    if (currentEl) {
+      currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 300);
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.legend-item').forEach(l => l.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  renderGrid();
+}
+
+function zoomWeek(weekNum) {
+  const now = new Date();
+  const livedMs = now - birthDate;
+  const livedWeeks = Math.floor(livedMs / (7*24*60*60*1000));
+
+  const weekDate = new Date(birthDate.getTime() + (weekNum - 1) * 7*24*60*60*1000);
+  const age = Math.floor((weekNum - 1) / 52);
+  const isLived = weekNum <= livedWeeks;
+  const isCurrent = weekNum === livedWeeks;
+
+  const title = document.getElementById('zoom-title');
+  const sub = document.getElementById('zoom-sub');
+  const content = document.getElementById('zoom-content');
+
+  if (isCurrent) {
+    title.innerHTML = `This <span class="accent">week.</span>`;
+    sub.textContent = `Week ${weekNum.toLocaleString()} of ${(lifeExpectancy*52).toLocaleString()}`;
+  } else if (isLived) {
+    const monthName = weekDate.toLocaleDateString('en', { month: 'long', year: 'numeric' });
+    title.innerHTML = `<span class="accent">${monthName}</span>`;
+    sub.textContent = `Age ${age} · Week ${weekNum.toLocaleString()} · Lived`;
+  } else {
+    title.innerHTML = `Week <span class="accent">${weekNum.toLocaleString()}</span>`;
+    sub.textContent = `Age ${age} · Not yet lived`;
+  }
+
+  // Hours in the week
+  let hoursHtml = '<div style="margin-bottom:20px"><div style="font-family:\'Space Mono\',monospace;font-size:8px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:8px;">168 hours in this week</div><div class="zoom-hours">';
+  for (let h = 0; h < 168; h++) {
+    let color;
+    const rand = Math.random();
+    if (rand < 0.33) color = 'var(--rose)'; // sleep
+    else if (rand < 0.55) color = 'var(--muted)'; // work
+    else if (rand < 0.67) color = `rgba(200,169,110,0.3)`; // screen
+    else color = isLived ? 'var(--gold)' : 'rgba(242,237,228,0.06)'; // yours / future
+    hoursHtml += `<div class="zoom-hour" style="background:${isLived || isCurrent ? color : 'rgba(242,237,228,0.04)'}"></div>`;
+  }
+  hoursHtml += '</div></div>';
+
+  // Day breakdown
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let daysHtml = '';
+  days.forEach(day => {
+    const sleep = day === 'Sat' || day === 'Sun' ? 38 : 33;
+    const work = day === 'Sat' || day === 'Sun' ? 0 : 35;
+    const screen = 12;
+    const yours = 100 - sleep - work - screen;
+    daysHtml += `
+      <div class="zoom-day-row">
+        <div class="zoom-day-name">${day}</div>
+        <div class="zoom-day-bar">
+          <div class="zoom-day-segment" style="width:${sleep}%;background:var(--rose);opacity:0.5"></div>
+          <div class="zoom-day-segment" style="width:${work}%;background:var(--muted);opacity:0.4"></div>
+          <div class="zoom-day-segment" style="width:${screen}%;background:rgba(200,169,110,0.25)"></div>
+          <div class="zoom-day-segment" style="width:${yours}%;background:var(--gold);opacity:0.7"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  // Insight
+  let insight = '';
+  if (isCurrent) {
+    const hoursLeft = Math.floor((7 - (now.getDay() || 7)) * 24 + (24 - now.getHours()));
+    insight = `
+      <div class="zoom-insight">
+        <div class="zoom-insight-label">Right now</div>
+        <div class="zoom-insight-text">
+          This week has ${hoursLeft} hours left. Of those, roughly ${Math.floor(hoursLeft*0.33)} will be sleep.
+          That leaves ${Math.floor(hoursLeft*0.33)} hours that are yours.<br><br>
+          This is the only week you are currently inside of. You will never be in this week again.
+        </div>
+      </div>
+    `;
+  } else if (isLived) {
+    insight = `
+      <div class="zoom-insight">
+        <div class="zoom-insight-label">This week is gone</div>
+        <div class="zoom-insight-text">
+          168 hours passed here. You slept through roughly 56 of them. You probably remember none of it specifically.<br><br>
+          But from inside this week, each hour was an entire hour. Each minute was a full minute. It was infinite while it lasted.
+        </div>
+      </div>
+    `;
+  } else {
+    const weeksUntil = weekNum - livedWeeks;
+    insight = `
+      <div class="zoom-insight">
+        <div class="zoom-insight-label">Not yet</div>
+        <div class="zoom-insight-text">
+          This week is ${weeksUntil.toLocaleString()} weeks from now. That's ${Math.floor(weeksUntil/52)} years.<br><br>
+          It doesn't exist yet. But if you reach it, it will contain 168 hours, each one as real and full as the hour you're in right now.<br><br>
+          You cannot feel its weight from here. But you will, when you're inside it.
+        </div>
+      </div>
+    `;
+  }
+
+  content.innerHTML = hoursHtml + daysHtml + insight;
+  goTo('zoom');
+}
+
+// ===== THE PULSE =====
+function startPulse() {
+  stopPulse();
+  secondsOnPage = 0;
+
+  const pulseEl = document.getElementById('pulse-text');
+  const now = new Date();
+  const livedMs = now - birthDate;
+  const livedWeeks = Math.floor(livedMs / (7*24*60*60*1000));
+  const totalWeeks = lifeExpectancy * 52;
+  const remainingWeeks = totalWeeks - livedWeeks;
+  const remainingSeconds = remainingWeeks * 7 * 24 * 60 * 60;
+
+  const messages = [
+    { at: 0, text: () => `<span class="pulse-counter">${remainingSeconds.toLocaleString()}</span> seconds remaining` },
+    { at: 8, text: () => `You've been here <span class="pulse-counter">${secondsOnPage}s</span> · ${(remainingSeconds - secondsOnPage).toLocaleString()} seconds left` },
+    { at: 20, text: () => `<span class="pulse-counter">${secondsOnPage}</span> seconds spent looking at your life instead of living it` },
+    { at: 40, text: () => `Each second on this page was a real second. You had <span class="pulse-counter">${(remainingSeconds - secondsOnPage).toLocaleString()}</span> left when you opened this.` },
+    { at: 60, text: () => `One minute gone. <span class="pulse-counter">${Math.floor((remainingSeconds - secondsOnPage)/60).toLocaleString()}</span> minutes remaining in your life.` },
+    { at: 90, text: () => `Still here. The grid hasn't changed. But you have <span class="pulse-counter">${(remainingSeconds - secondsOnPage).toLocaleString()}</span> fewer seconds than when you started.` },
+    { at: 120, text: () => `Two minutes. You've spent them here. That was a choice.` },
+    { at: 180, text: () => `Three minutes looking at a representation of your life. The real one continued without you.` },
+    { at: 300, text: () => `You're still here.` },
+  ];
+
+  pulseInterval = setInterval(() => {
+    secondsOnPage++;
+
+    let currentMessage = messages[0];
+    for (const msg of messages) {
+      if (secondsOnPage >= msg.at) currentMessage = msg;
+    }
+    pulseEl.innerHTML = currentMessage.text();
+  }, 1000);
+}
+
+function stopPulse() {
+  if (pulseInterval) clearInterval(pulseInterval);
+}
+</script>
+</body>
+</html>

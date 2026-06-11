@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>지금</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400&display=swap');
+
+  :root {
+    --void: #0B1418;
+    --void-soft: #11201F;
+    --ivory: #F4F1EC;
+    --celadon: #A8BDB2;
+    --aurora: #7BA68E;
+    --gold: #D4B896;
+    --warm: #C8A87C;
+    --past: #C8A87C;
+    --future: #3D5C5C;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+
+  html, body {
+    height:100%;
+    overflow:hidden;
+    background:var(--void);
+    font-family:'Jost',sans-serif;
+    color:var(--ivory);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #stage {
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    cursor:pointer;
+  }
+
+  canvas {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+  }
+
+  /* ===== TEXT LAYER ===== */
+  #text-layer {
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:48px 36px;
+    pointer-events:none;
+    z-index:5;
+  }
+
+  .beat {
+    position:absolute;
+    max-width:340px;
+    opacity:0;
+    transition:opacity 1.6s ease, transform 1.6s ease;
+    transform:translateY(10px);
+  }
+
+  .beat.visible {
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  .beat .line {
+    font-family:'Cormorant Garamond',serif;
+    font-size:27px;
+    font-weight:300;
+    line-height:1.45;
+    letter-spacing:0.01em;
+    margin:0 0 2px;
+  }
+
+  .beat .line.em {
+    font-style:italic;
+    color:var(--gold);
+  }
+
+  .beat .line.small {
+    font-family:'Jost',sans-serif;
+    font-size:13px;
+    font-weight:300;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    opacity:0.65;
+    margin-top:24px;
+  }
+
+  /* racing clock */
+  #clock {
+    font-family:'Jost',sans-serif;
+    font-weight:300;
+    font-variant-numeric:tabular-nums;
+    font-size:15px;
+    letter-spacing:0.1em;
+    color:var(--celadon);
+    opacity:0;
+    transition:opacity 1.2s ease;
+    margin-top:28px;
+  }
+
+  #clock.visible { opacity:0.5; }
+
+  /* ===== INTRO ===== */
+  #intro {
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:48px 36px;
+    z-index:10;
+    transition:opacity 1.8s ease;
+  }
+
+  #intro.gone { opacity:0; pointer-events:none; }
+
+  .intro-symbol {
+    font-family:'Cormorant Garamond',serif;
+    font-size:64px;
+    font-weight:300;
+    color:var(--aurora);
+    margin-bottom:28px;
+    opacity:0;
+    animation:rise 2.2s ease 0.3s forwards;
+  }
+
+  .intro-word {
+    font-family:'Jost',sans-serif;
+    font-size:11px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    opacity:0;
+    animation:rise 2.2s ease 0.9s forwards;
+    margin-bottom:44px;
+  }
+
+  .intro-enter {
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:18px;
+    color:var(--ivory);
+    opacity:0;
+    animation:rise 2.2s ease 1.6s forwards, pulse 4s ease-in-out 3.8s infinite;
+    border-bottom:1px solid rgba(168,189,178,0.3);
+    padding-bottom:4px;
+  }
+
+  @keyframes rise {
+    from { opacity:0; transform:translateY(14px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.55; }
+  }
+
+  /* ===== BREATH GUIDE ===== */
+  #breath-guide {
+    position:absolute;
+    bottom:64px;
+    left:0; right:0;
+    text-align:center;
+    font-family:'Jost',sans-serif;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    opacity:0;
+    transition:opacity 1.2s ease;
+    z-index:6;
+    pointer-events:none;
+  }
+
+  #breath-guide.visible { opacity:0.7; }
+
+  /* ===== TAP HINT ===== */
+  #tap-hint {
+    position:absolute;
+    bottom:32px;
+    left:0; right:0;
+    text-align:center;
+    font-family:'Jost',sans-serif;
+    font-size:10px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--ivory);
+    opacity:0;
+    transition:opacity 1.5s ease;
+    z-index:6;
+    pointer-events:none;
+  }
+
+  #tap-hint.visible { opacity:0.2; }
+
+  @media (max-height:680px) {
+    .beat .line { font-size:23px; }
+    .intro-symbol { font-size:54px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="canvas"></canvas>
+
+  <div id="text-layer">
+    <div class="beat" id="beat"></div>
+    <div id="clock"></div>
+  </div>
+
+  <div id="breath-guide">adem</div>
+  <div id="tap-hint">tik om verder te gaan</div>
+
+  <div id="intro">
+    <div class="intro-symbol">지금</div>
+    <div class="intro-word">nu</div>
+    <div class="intro-enter" onclick="begin(event)">begin</div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// 지금 (Jigeum) — Now
+// The present moment as the only eternity.
+// Companion to 사이 (Between).
+// ============================================
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, DPR;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ===== STATE =====
+const state = {
+  phase: 'intro',     // intro, racing, breath, horizon, rest
+  t: 0,               // elapsed seconds in canvas time
+  breath: 0,          // 0..1 breathing cycle position
+  breathPeriod: 9,    // seconds per full breath (4.5 in, 4.5 out)
+  horizonAmount: 0,   // 0..1 how formed the horizon is
+  orbBase: 46,
+  startMs: Date.now(),
+};
+
+// Soft starfield (the "what was" and "what will be")
+const stars = [];
+for (let i = 0; i < 90; i++) {
+  stars.push({
+    x: Math.random(),
+    y: Math.random(),
+    r: Math.random() * 1.2 + 0.3,
+    tw: Math.random() * Math.PI * 2,
+    twSpeed: Math.random() * 0.8 + 0.2,
+    warm: Math.random() > 0.5,
+  });
+}
+
+// ===== RENDER LOOP =====
+let lastFrame = performance.now();
+function loop(now) {
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+  state.t += dt;
+
+  // breathing cycle
+  state.breath = (state.breath + dt / state.breathPeriod) % 1;
+
+  // ease horizon in during horizon phase
+  if (state.phase === 'horizon' || state.phase === 'rest') {
+    state.horizonAmount = Math.min(1, state.horizonAmount + dt * 0.4);
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2;
+
+  // background gradient — deepens with horizon
+  const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
+  bgGrad.addColorStop(0, '#11201F');
+  bgGrad.addColorStop(1, '#0B1418');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ===== HORIZON (past behind / future ahead) =====
+  if (state.horizonAmount > 0.01) {
+    const ha = easeInOut(state.horizonAmount);
+    const horizonY = cy;
+
+    // "past" glow — upper region, warm
+    const pastGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+    pastGrad.addColorStop(0, `rgba(200,168,124,${0.0})`);
+    pastGrad.addColorStop(1, `rgba(200,168,124,${0.10 * ha})`);
+    ctx.fillStyle = pastGrad;
+    ctx.fillRect(0, 0, W, horizonY);
+
+    // "future" — lower region, cool & open
+    const futGrad = ctx.createLinearGradient(0, horizonY, 0, H);
+    futGrad.addColorStop(0, `rgba(61,92,92,${0.08 * ha})`);
+    futGrad.addColorStop(1, `rgba(11,20,24,${0.0})`);
+    ctx.fillStyle = futGrad;
+    ctx.fillRect(0, horizonY, W, H - horizonY);
+
+    // the bright present line
+    const lineGrad = ctx.createLinearGradient(0, 0, W, 0);
+    lineGrad.addColorStop(0, 'rgba(168,189,178,0)');
+    lineGrad.addColorStop(0.5, `rgba(212,184,150,${0.55 * ha})`);
+    lineGrad.addColorStop(1, 'rgba(168,189,178,0)');
+    ctx.fillStyle = lineGrad;
+    const lineH = 1.5;
+    ctx.fillRect(0, horizonY - lineH / 2, W, lineH);
+
+    // soft bloom on the line
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const bloom = ctx.createLinearGradient(0, horizonY - 30, 0, horizonY + 30);
+    bloom.addColorStop(0, 'rgba(212,184,150,0)');
+    bloom.addColorStop(0.5, `rgba(212,184,150,${0.06 * ha})`);
+    bloom.addColorStop(1, 'rgba(212,184,150,0)');
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, horizonY - 30, W, 60);
+    ctx.restore();
+  }
+
+  // ===== STARS =====
+  if (state.phase !== 'intro') {
+    const horizonY = cy;
+    for (const s of stars) {
+      const sx = s.x * W;
+      const sy = s.y * H;
+      // stars above horizon (past) are warm; below (future) are cool
+      const isPast = sy < horizonY;
+      const tw = 0.4 + 0.6 * (Math.sin(state.t * s.twSpeed + s.tw) * 0.5 + 0.5);
+      let alpha = tw * 0.5;
+      // fade stars near the present line
+      const distFromLine = Math.abs(sy - horizonY);
+      if (state.horizonAmount > 0 && distFromLine < 40) {
+        alpha *= distFromLine / 40;
+      }
+      const col = (isPast || s.warm) ? '212,184,150' : '123,166,142';
+      ctx.beginPath();
+      ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${col},${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  // ===== BREATH ORB (the present, you) =====
+  if (state.phase === 'breath' || state.phase === 'horizon' || state.phase === 'rest' || state.phase === 'racing') {
+    // breathing scale: smooth in-out
+    const breathEase = (Math.sin(state.breath * Math.PI * 2 - Math.PI / 2) + 1) / 2; // 0..1
+    const scale = 0.78 + breathEase * 0.5;
+    const radius = state.orbBase * scale;
+
+    // outer glow
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 3.2);
+    const glowStrength = state.phase === 'racing' ? 0.10 : 0.18;
+    glow.addColorStop(0, `rgba(168,189,178,${glowStrength})`);
+    glow.addColorStop(0.4, `rgba(123,166,142,${glowStrength * 0.5})`);
+    glow.addColorStop(1, 'rgba(123,166,142,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // orb core
+    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    core.addColorStop(0, 'rgba(244,241,236,0.95)');
+    core.addColorStop(0.5, 'rgba(212,184,150,0.55)');
+    core.addColorStop(1, 'rgba(168,189,178,0.08)');
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // thin ring
+    ctx.strokeStyle = `rgba(168,189,178,${0.3 + breathEase * 0.25})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius + 6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function easeInOut(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
+
+// ===== BEATS (the script) =====
+const beats = [
+  // racing — the now you cannot hold
+  { phase:'racing', clock:true, lines:[['Kijk.','']], hold:3500 },
+  { phase:'racing', clock:true, lines:[['Dit moment is al voorbij.','']], hold:3200 },
+  { phase:'racing', clock:true, lines:[['En dit.','em'],['En dit.','em']], hold:3200 },
+  { phase:'racing', clock:true, lines:[['Je kunt het niet vasthouden.','']], hold:3800 },
+
+  // breath — but you can be here
+  { phase:'breath', lines:[['Maar je kunt er zijn.','']], hold:3800, breath:true },
+  { phase:'breath', lines:[['Adem met de cirkel mee.','em']], hold:5000, breath:true },
+
+  // horizon — the shape of time
+  { phase:'horizon', lines:[['Achter je: alles wat was.','']], hold:4200, breath:true },
+  { phase:'horizon', lines:[['De fjorden. De reis.','em'],['Elk gezicht. Elk afscheid.','em']], hold:4800, breath:true },
+  { phase:'horizon', lines:[['Voor je: alles wat komt.','']], hold:4000, breath:true },
+  { phase:'horizon', lines:[['Onbekend. Nog niet hier.','em']], hold:4000, breath:true },
+  { phase:'horizon', lines:[['En hier —','']], hold:2600, breath:true },
+  { phase:'horizon', lines:[['— sta jij.','em']], hold:3800, breath:true },
+
+  // the realization
+  { phase:'rest', lines:[['Je bent nooit ergens anders','' ],['geweest dan hier.','']], hold:5000, breath:true },
+  { phase:'rest', lines:[['Elke fjord was een nu.','em'],['Elke verjaardag. Elk moment.','em']], hold:5000, breath:true },
+  { phase:'rest', lines:[['Je hebt nooit in het verleden geleefd.',''],['Of in de toekomst.','']], hold:5000, breath:true },
+  { phase:'rest', lines:[['Alleen hier. Alleen nu.','em']], hold:4500, breath:true },
+  { phase:'rest', lines:[['Het nu is het enige dat nooit eindigt —',''],['want je bent er altijd.','']], hold:6000, breath:true },
+
+  // peace
+  { phase:'rest', lines:[['Je hoeft de tijd niet vast te houden.','']], hold:4200, breath:true },
+  { phase:'rest', lines:[['Je bent er al in.','em']], hold:4200, breath:true },
+  { phase:'rest', lines:[['Dit is het.',''],['Dit was altijd het.','em']], hold:5500, breath:true },
+  { phase:'rest', lines:[['지금','em'],['','']], hold:99999, breath:true, final:true },
+];
+
+let beatIndex = -1;
+let advancing = false;
+let clockRunning = false;
+
+function begin(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('intro').classList.add('gone');
+  setTimeout(() => {
+    nextBeat();
+    document.getElementById('stage').addEventListener('click', onTap);
+  }, 1400);
+}
+
+function onTap() {
+  if (advancing) return;
+  nextBeat();
+}
+
+let autoTimer = null;
+
+function nextBeat() {
+  beatIndex++;
+  if (beatIndex >= beats.length) return;
+
+  const beat = beats[beatIndex];
+  advancing = true;
+
+  // set phase
+  state.phase = beat.phase;
+
+  // clock
+  if (beat.clock) {
+    startClock();
+    document.getElementById('clock').classList.add('visible');
+  } else {
+    document.getElementById('clock').classList.remove('visible');
+    if (beatIndex > 4) stopClock();
+  }
+
+  // breath guide
+  const bg = document.getElementById('breath-guide');
+  if (beat.breath) bg.classList.add('visible');
+  else bg.classList.remove('visible');
+
+  // render text
+  const beatEl = document.getElementById('beat');
+  beatEl.classList.remove('visible');
+
+  setTimeout(() => {
+    let html = '';
+    for (const [text, cls] of beat.lines) {
+      if (text === '') continue;
+      html += `<p class="line ${cls}">${text}</p>`;
+    }
+    beatEl.innerHTML = html;
+    beatEl.classList.add('visible');
+
+    // tap hint after first beat settles
+    if (!beat.final) {
+      setTimeout(() => document.getElementById('tap-hint').classList.add('visible'), 2000);
+    } else {
+      document.getElementById('tap-hint').classList.remove('visible');
+      document.getElementById('breath-guide').classList.remove('visible');
+    }
+
+    advancing = false;
+
+    // auto-advance (gentle) — but user can tap to go faster
+    clearTimeout(autoTimer);
+    if (!beat.final) {
+      autoTimer = setTimeout(() => {
+        if (beatIndex < beats.length - 1) nextBeat();
+      }, beat.hold);
+    }
+  }, 800);
+}
+
+// ===== RACING CLOCK =====
+function startClock() {
+  clockRunning = true;
+  tickClock();
+}
+function stopClock() {
+  clockRunning = false;
+}
+function tickClock() {
+  if (!clockRunning) return;
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const ms = String(now.getMilliseconds()).padStart(3,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}.${ms}`;
+  requestAnimationFrame(tickClock);
+}
+
+// adjust breath guide text with the cycle
+setInterval(() => {
+  const bg = document.getElementById('breath-guide');
+  if (!bg.classList.contains('visible')) return;
+  const breathEase = (Math.sin(state.breath * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+  bg.textContent = breathEase > 0.5 ? 'adem in' : 'adem uit';
+}, 200);
+</script>
+</body>
+</html>

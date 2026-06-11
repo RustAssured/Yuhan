@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>유한 — het eindige</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:wght@400&family=Jost:wght@300;400&display=swap');
+
+  :root {
+    --void: #0A1014;
+    --ivory: #F4F1EC;
+    --celadon: #A8BDB2;
+    --gold: #D4B896;
+    --gold-bright: #E8D3AE;
+    --cold: #6E93A0;
+    --rose-dawn: #C9A18E;
+    --line: rgba(168,189,178,0.12);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html { scroll-behavior:smooth; }
+
+  body {
+    background:var(--void);
+    font-family:'Jost',sans-serif;
+    color:var(--ivory);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:64px 32px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .hero::before {
+    content:'';
+    position:absolute;
+    inset:-20%;
+    background:
+      radial-gradient(ellipse at 25% 30%, rgba(110,147,160,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 75% 70%, rgba(212,184,150,0.06) 0%, transparent 50%);
+    animation:drift 24s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0%,100% { transform:translate(0,0); }
+    50% { transform:translate(1.5%,-1%); }
+  }
+
+  .hero-symbol {
+    font-family:'Cormorant Garamond',serif;
+    font-size:76px;
+    font-weight:300;
+    background:linear-gradient(110deg, var(--cold) 0%, var(--ivory) 50%, var(--gold) 100%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;
+    margin-bottom:18px;
+    opacity:0; animation:rise 2.4s ease 0.4s forwards;
+    position:relative;
+  }
+
+  .hero-title {
+    font-family:'Jost',sans-serif;
+    font-size:12px;
+    letter-spacing:0.34em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    margin-bottom:48px;
+    opacity:0; animation:rise 2.4s ease 0.9s forwards;
+    position:relative;
+  }
+
+  .hero-narrative {
+    font-family:'Cormorant Garamond',serif;
+    font-size:20px;
+    font-weight:300;
+    font-style:italic;
+    line-height:1.75;
+    color:var(--ivory);
+    max-width:420px;
+    opacity:0; animation:rise 2.4s ease 1.4s forwards;
+    position:relative;
+  }
+
+  .hero-narrative .gold { color:var(--gold); font-style:italic; }
+
+  .hero-down {
+    margin-top:64px;
+    font-size:10px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    opacity:0;
+    animation:rise 2.4s ease 2s forwards, sink 3.5s ease-in-out 3s infinite;
+    position:relative;
+  }
+
+  @keyframes rise { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes sink { 0%,100%{transform:translateY(0);opacity:0.5;} 50%{transform:translateY(6px);opacity:0.9;} }
+
+  /* ===== POLYPTYCH ===== */
+  .polyptych {
+    display:flex;
+    flex-direction:column;
+    min-height:100dvh;
+  }
+
+  @media (min-width:880px) {
+    .polyptych { flex-direction:row; min-height:100vh; }
+  }
+
+  .panel {
+    flex:1;
+    position:relative;
+    min-height:25dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:56px 28px;
+    cursor:pointer;
+    overflow:hidden;
+    border-bottom:1px solid var(--line);
+    transition:flex 0.9s cubic-bezier(0.4,0,0.2,1);
+    text-decoration:none;
+    color:var(--ivory);
+  }
+
+  @media (min-width:880px) {
+    .panel { border-bottom:none; border-right:1px solid var(--line); min-height:100vh; }
+    .panel:last-child { border-right:none; }
+    .panel:hover { flex:1.6; }
+  }
+
+  /* per-panel ambient backgrounds */
+  .panel-sai { background:linear-gradient(180deg, #0D161C 0%, #0A1014 100%); }
+  .panel-jigeum { background:linear-gradient(180deg, #11201F 0%, #0A1014 100%); }
+  .panel-sunggo { background:linear-gradient(180deg, #101A1E 0%, #0A1014 100%); }
+  .panel-eunhye { background:linear-gradient(180deg, #141A1E 0%, #1A1812 100%); }
+
+  /* ambient motion layers */
+  .panel .ambient {
+    position:absolute; inset:0;
+    pointer-events:none;
+    opacity:0.85;
+  }
+
+  /* 사이 — counting seconds, cold pulse */
+  .panel-sai .ambient::before {
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 50% 42%, rgba(110,147,160,0.13) 0%, transparent 45%);
+    animation:coldPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes coldPulse {
+    0%,100% { opacity:0.5; transform:scale(1); }
+    50% { opacity:1; transform:scale(1.04); }
+  }
+
+  /* 지금 — breathing warmth */
+  .panel-jigeum .ambient::before {
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 50% 45%, rgba(212,184,150,0.14) 0%, transparent 42%);
+    animation:breathe 9s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%,100% { opacity:0.4; transform:scale(0.92); }
+    50% { opacity:1; transform:scale(1.1); }
+  }
+
+  /* 숭고 — slow oscillation between cold and warm */
+  .panel-sunggo .ambient::before {
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 38% 45%, rgba(110,147,160,0.13) 0%, transparent 45%);
+    animation:swayCold 11s ease-in-out infinite;
+  }
+  .panel-sunggo .ambient::after {
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 62% 45%, rgba(212,184,150,0.13) 0%, transparent 45%);
+    animation:swayWarm 11s ease-in-out infinite;
+  }
+  @keyframes swayCold { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+  @keyframes swayWarm { 0%,100%{opacity:0.25;} 50%{opacity:1;} }
+
+  /* 은혜 — dawn rising from below */
+  .panel-eunhye .ambient::before {
+    content:'';
+    position:absolute; left:0; right:0; bottom:0; height:70%;
+    background:linear-gradient(0deg, rgba(212,184,150,0.16) 0%, rgba(201,161,142,0.06) 45%, transparent 100%);
+    animation:dawn 14s ease-in-out infinite;
+  }
+  @keyframes dawn {
+    0%,100% { opacity:0.4; transform:translateY(12%); }
+    50% { opacity:1; transform:translateY(0); }
+  }
+
+  .panel-num {
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.3em;
+    color:var(--celadon);
+    opacity:0.45;
+    margin-bottom:26px;
+    position:relative;
+  }
+
+  .panel-symbol {
+    font-family:'Cormorant Garamond',serif;
+    font-size:52px;
+    font-weight:300;
+    margin-bottom:10px;
+    position:relative;
+    transition:transform 0.7s ease;
+  }
+
+  .panel:hover .panel-symbol { transform:translateY(-4px); }
+
+  .panel-sai .panel-symbol { color:var(--cold); }
+  .panel-jigeum .panel-symbol { color:var(--gold); }
+  .panel-sunggo .panel-symbol {
+    background:linear-gradient(100deg, var(--cold) 20%, var(--gold) 80%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .panel-eunhye .panel-symbol { color:var(--gold-bright); }
+
+  .panel-name {
+    font-family:'Jost',sans-serif;
+    font-size:10px;
+    letter-spacing:0.26em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    opacity:0.7;
+    margin-bottom:30px;
+    position:relative;
+  }
+
+  .panel-line {
+    font-family:'Cormorant Garamond',serif;
+    font-size:17px;
+    font-weight:300;
+    font-style:italic;
+    line-height:1.65;
+    color:var(--ivory);
+    opacity:0.8;
+    max-width:240px;
+    position:relative;
+    transition:opacity 0.6s ease;
+  }
+
+  .panel:hover .panel-line { opacity:1; }
+
+  .panel-open {
+    margin-top:36px;
+    font-family:'Jost',sans-serif;
+    font-size:9px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--gold);
+    opacity:0.5;
+    border-bottom:1px solid rgba(212,184,150,0.3);
+    padding-bottom:3px;
+    position:relative;
+    transition:opacity 0.5s ease;
+  }
+
+  .panel:hover .panel-open { opacity:1; }
+
+  /* ===== CODA ===== */
+  .coda {
+    min-height:70dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:80px 32px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .coda::before {
+    content:'';
+    position:absolute; left:50%; top:0;
+    transform:translateX(-50%);
+    width:1px; height:90px;
+    background:linear-gradient(180deg, transparent, rgba(212,184,150,0.4));
+  }
+
+  .coda-text {
+    font-family:'Cormorant Garamond',serif;
+    font-size:21px;
+    font-weight:300;
+    font-style:italic;
+    line-height:1.8;
+    color:var(--ivory);
+    max-width:400px;
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity 1.8s ease, transform 1.8s ease;
+  }
+
+  .coda-text.visible { opacity:0.9; transform:translateY(0); }
+
+  .coda-text .gold { color:var(--gold); }
+
+  .coda-sign {
+    margin-top:54px;
+    font-family:'Jost',sans-serif;
+    font-size:9px;
+    letter-spacing:0.3em;
+    text-transform:uppercase;
+    color:var(--celadon);
+    opacity:0;
+    transition:opacity 1.8s ease 0.6s;
+  }
+
+  .coda-sign.visible { opacity:0.4; }
+
+  @media (max-width:879px) {
+    .hero-symbol { font-size:60px; }
+    .hero-narrative { font-size:18px; }
+    .panel { min-height:46dvh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-symbol">유한</div>
+  <div class="hero-title">het eindige · een vierluik</div>
+  <div class="hero-narrative">
+    Het begon met een vraag over eindeloze gangen.<br>
+    Het werd een reis langs bergen, fjorden<br>
+    en de gezichten van mensen die je liefhebt.<br><br>
+    Vier vensters. <span class="gold">Eén waarheid.</span><br>
+    Het eindigt — daarom is het.
+  </div>
+  <div class="hero-down">↓ open de vensters</div>
+</section>
+
+<!-- POLYPTYCH -->
+<section class="polyptych">
+
+  <a class="panel panel-sai" href="sai.html">
+    <div class="ambient"></div>
+    <div class="panel-num">I</div>
+    <div class="panel-symbol">사이</div>
+    <div class="panel-name">tussen · het verstrijken</div>
+    <div class="panel-line">Je leven in weken.<br>De seconden die wegtellen.<br>De kou die wakker maakt.</div>
+    <div class="panel-open">open</div>
+  </a>
+
+  <a class="panel panel-jigeum" href="jigeum.html">
+    <div class="ambient"></div>
+    <div class="panel-num">II</div>
+    <div class="panel-symbol">지금</div>
+    <div class="panel-name">nu · de aanwezigheid</div>
+    <div class="panel-line">Je bent nooit ergens anders<br>geweest dan hier.<br>Adem. Dit is het.</div>
+    <div class="panel-open">open</div>
+  </a>
+
+  <a class="panel panel-sunggo" href="sunggo.html">
+    <div class="ambient"></div>
+    <div class="panel-num">III</div>
+    <div class="panel-symbol">숭고</div>
+    <div class="panel-name">het sublieme · beide</div>
+    <div class="panel-line">Ondraaglijk en prachtig.<br>Tegelijk. Je hoeft de balans<br>niet te vinden.</div>
+    <div class="panel-open">open</div>
+  </a>
+
+  <a class="panel panel-eunhye" href="eunhye.html">
+    <div class="ambient"></div>
+    <div class="panel-num">IV</div>
+    <div class="panel-symbol">은혜</div>
+    <div class="panel-name">grace · het gegevene</div>
+    <div class="panel-line">Wat ongevraagd arriveert.<br>Wat je alleen kunt geven.<br>Licht voor iemand anders.</div>
+    <div class="panel-open">open</div>
+  </a>
+
+</section>
+
+<!-- CODA -->
+<section class="coda">
+  <div class="coda-text" id="coda-text">
+    De instance is de eeuwigheid.<br>
+    En de eeuwigheid beleef je in een instantie,<br>
+    om daarna nooit meer op die manier terug te keren.<br><br>
+    <span class="gold">Vertel me meer over het eindige.</span>
+  </div>
+  <div class="coda-sign" id="coda-sign">bergen → kirkenes → hier</div>
+</section>
+
+<script>
+// reveal coda on scroll
+const codaText = document.getElementById('coda-text');
+const codaSign = document.getElementById('coda-sign');
+const obs = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (e.isIntersecting) {
+      codaText.classList.add('visible');
+      codaSign.classList.add('visible');
+    }
+  }
+}, { threshold: 0.4 });
+obs.observe(codaText);
+</script>
+</body>
+</html>
